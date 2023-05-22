@@ -119,8 +119,8 @@ func (t *Team) UpdateContinuousPerformanceAwayV2() {
 	t.ContinuousPerformanceAway = t.ContinuousPerformanceAway + 1
 }
 
-func UpdateTeamRatings(homeTeamName, awayTeamName string, homeGoalScored, awayGoalScored int) error {
-	ratings, err := csvmanager.ReadCsv("./matchdata/ratingsfifa4x4Eng.csv", 0755, true)
+func UpdateTeamRatings(filepath string, homeTeamName, awayTeamName string, homeGoalScored, awayGoalScored int) error {
+	ratings, err := csvmanager.ReadCsv(filepath, 0755, true)
 	if err != nil {
 		panic(err)
 	}

@@ -174,7 +174,7 @@ func TestUpdateTeamRatings(t *testing.T) {
 			t.Error(err)
 			t.FailNow()
 		}
-		err = UpdateTeamRatings(HomeTeam.Name, AwayTeam.Name, homeGoal, awayGoal)
+		err = UpdateTeamRatings("./matchdata/ratingsfifa4x4Eng.csv", HomeTeam.Name, AwayTeam.Name, homeGoal, awayGoal)
 		if err != nil {
 			t.Error(err)
 			t.Fail()
