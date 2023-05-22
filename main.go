@@ -214,8 +214,8 @@ func UpdateTeamRatings(filepath string, homeTeamName, awayTeamName string, homeG
 	}
 	HTWrite := []string{HomeTeam.Name, fmt.Sprintf("%.2f", HomeTeam.HomeRating), fmt.Sprintf("%.2f", HomeTeam.AwayRating), fmt.Sprintf("%d", HomeTeam.ContinuousPerformanceHome), fmt.Sprintf("%d", HomeTeam.ContinuousPerformanceAway)}
 	ATWrite := []string{AwayTeam.Name, fmt.Sprintf("%.2f", AwayTeam.HomeRating), fmt.Sprintf("%.2f", AwayTeam.AwayRating), fmt.Sprintf("%d", AwayTeam.ContinuousPerformanceHome), fmt.Sprintf("%d", AwayTeam.ContinuousPerformanceAway)}
-	csvmanager.ReplaceRow("./matchdata/ratingsfifa4x4Eng.csv", 0755, HToccurence+1, HTWrite)
-	csvmanager.ReplaceRow("./matchdata/ratingsfifa4x4Eng.csv", 0755, AToccurence+1, ATWrite)
+	csvmanager.ReplaceRow(filepath, 0755, HToccurence+1, HTWrite)
+	csvmanager.ReplaceRow(filepath, 0755, AToccurence+1, ATWrite)
 	return nil
 }
 

@@ -185,50 +185,9 @@ func TestUpdateTeamRatings(t *testing.T) {
 }
 
 func TestSearchRankings(t *testing.T) {
-	search := func(teamName, venue string) *Team {
-		ratings, err := csvmanager.ReadCsv("./matchdata/ratingsfifa4x4Eng.csv", 0755, true)
-		if err != nil {
-			panic(err)
-		}
-		Team := &Team{}
-		TeamCol := ratings.Col("TeamName").String()
-		occurence := slices.Index(TeamCol, teamName)
-		data := ratings.Row(occurence).String()
-		Team.Name = teamName
-		Team.HomeRating, err = strconv.ParseFloat(data[1], 64)
-		if err != nil {
-			panic(err)
-		}
-		Team.AwayRating, err = strconv.ParseFloat(data[2], 64)
-		if err != nil {
-			panic(err)
-		}
-		Team.ContinuousPerformanceHome, err = strconv.Atoi(data[3])
-		if err != nil {
-			panic(err)
-		}
-		Team.ContinuousPerformanceAway, err = strconv.Atoi(data[4])
-		if err != nil {
-			panic(err)
-		}
-		if venue == "away" {
-			if Team.ContinuousPerformanceAway > 1 {
-				Team.AwayRating = Team.ProvisionalRatingAwayV2()
-			} else if Team.ContinuousPerformanceAway < -1 {
-				Team.AwayRating = Team.ProvisionalRatingAway()
-			}
-		}
-		if venue == "home" {
-			if Team.ContinuousPerformanceHome > 1 {
-				Team.HomeRating = Team.ProvisionalRatingHome()
-			} else if Team.ContinuousPerformanceHome < -1 {
-				Team.HomeRating = Team.ProvisionalRatingHomeV2()
-			}
-		}
-
-		return Team
-	}
-	t.Error(search("BHA", "away"))
+	hT := Search("./matchdata/ratingsfifa4x4Eng.csv", "LEI", "home")
+	aT := Search("./matchdata/ratingsfifa4x4Eng.csv", "NU", "away")
+	t.Error(hT.HomeRating, aT.AwayRating)
 }
 
 //
