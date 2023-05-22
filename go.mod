@@ -1,4 +1,4 @@
-module dolores
+module github.com/arewabolu/pi-rating
 
 go 1.20
 
