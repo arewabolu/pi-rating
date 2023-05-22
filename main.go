@@ -219,8 +219,8 @@ func UpdateTeamRatings(filepath string, homeTeamName, awayTeamName string, homeG
 	return nil
 }
 
-func Search(teamName, venue string) *Team {
-	ratings, err := csvmanager.ReadCsv("./matchdata/ratingsfifa4x4Eng.csv", 0755, true)
+func Search(filepath string, teamName, venue string) *Team {
+	ratings, err := csvmanager.ReadCsv(filepath, 0755, true)
 	if err != nil {
 		panic(err)
 	}
@@ -261,4 +261,8 @@ func Search(teamName, venue string) *Team {
 	}
 
 	return team
+}
+
+func TotalBackgroundRating(homeRating, awayRating float64) float64 {
+	return homeRating + awayRating
 }
