@@ -16,7 +16,7 @@ func TestNewRating(t *testing.T) {
 		AwayRating:                0.4,
 		ContinuousPerformanceHome: 3,
 	}
-	HXG := expectedGoalIndividual(HT.HomeRating)
+	HXG := ExpectedGoalIndividual(HT.HomeRating)
 	goalScoredH := 4
 	AT := &Team{
 		Name:                      "Wolves",
@@ -24,9 +24,9 @@ func TestNewRating(t *testing.T) {
 		AwayRating:                -1.2,
 		ContinuousPerformanceAway: -1,
 	}
-	AXG := expectedGoalIndividual(AT.AwayRating)
+	AXG := ExpectedGoalIndividual(AT.AwayRating)
 	goalScoredA := 1
-	errFunc := errorGDFunc(errorGD(goalDifference(goalScoredH, goalScoredA), expectedGoalDifference(HXG, AXG)))
+	errFunc := errorGDFunc(errorGD(goalDifference(goalScoredH, goalScoredA), ExpectedGoalDifference(HXG, AXG)))
 	//t.Error(HT.ProvisionalRatingHome())
 	HT.UpdateBackgroundHomeTeamRatings(errFunc)
 	HT.UpdateContinuousPerformanceHome()
@@ -97,9 +97,9 @@ func TestReader(t *testing.T) {
 				panic(err)
 			}
 		}
-		HxG := expectedGoalIndividual(HomeTeam.HomeRating)
-		AxG := expectedGoalIndividual(AwayTeam.AwayRating)
-		xGD := expectedGoalDifference(HxG, AxG)
+		HxG := ExpectedGoalIndividual(HomeTeam.HomeRating)
+		AxG := ExpectedGoalIndividual(AwayTeam.AwayRating)
+		xGD := ExpectedGoalDifference(HxG, AxG)
 		GD := goalDifference(homeGoal, awayGoal)
 		var HomeErrFunc, AwayErrFunc float64
 		errFunc := errorGDFunc(errorGD(GD, xGD))

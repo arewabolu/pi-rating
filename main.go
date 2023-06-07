@@ -28,7 +28,7 @@ type Team struct {
 	ContinuousPerformanceAway int //continuous performance is either over or under
 }
 
-func expectedGoalIndividual(rating float64) float64 {
+func ExpectedGoalIndividual(rating float64) float64 {
 	RG := math.Abs(rating) / 3
 	if rating < 0 {
 		return -1 * (math.Pow(10, RG) - 1)
@@ -36,7 +36,7 @@ func expectedGoalIndividual(rating float64) float64 {
 	return math.Pow(10, RG) - 1
 }
 
-func expectedGoalDifference(homexG, awayxG float64) float64 { return homexG - awayxG }
+func ExpectedGoalDifference(homexG, awayxG float64) float64 { return homexG - awayxG }
 
 func errorGD(goalDifference int, expectedGoalDifference float64) float64 {
 	return math.Abs(float64(goalDifference) - expectedGoalDifference)
@@ -174,9 +174,9 @@ func UpdateTeamRatings(filepath string, homeTeamName, awayTeamName string, homeG
 			panic(err)
 		}
 	}
-	HxG := expectedGoalIndividual(HomeTeam.HomeRating)
-	AxG := expectedGoalIndividual(AwayTeam.AwayRating)
-	xGD := expectedGoalDifference(HxG, AxG)
+	HxG := ExpectedGoalIndividual(HomeTeam.HomeRating)
+	AxG := ExpectedGoalIndividual(AwayTeam.AwayRating)
+	xGD := ExpectedGoalDifference(HxG, AxG)
 	GD := goalDifference(homeGoalScored, awayGoalScored)
 	var HomeErrFunc, AwayErrFunc float64
 	errFunc := errorGDFunc(errorGD(GD, xGD))
@@ -219,29 +219,40 @@ func UpdateTeamRatings(filepath string, homeTeamName, awayTeamName string, homeG
 	return nil
 }
 
-func Search(filepath string, teamName, venue string) *Team {
+func CheckRatings(filepath string, team string) []string {
 	ratings, err := csvmanager.ReadCsv(filepath, 0755, true)
 	if err != nil {
 		panic(err)
 	}
-	team := &Team{}
 	TeamCol := ratings.Col("TeamName").String()
-	occurence := slices.Index(TeamCol, teamName)
-	data := ratings.Row(occurence).String()
+	index := slices.Index(TeamCol, team)
+	if index != -1 {
+		return ratings.Row(index).String()
+	}
+	return []string{}
+}
+
+func Search(filepath string, teamName, venue string) *Team {
+	teamInfo := CheckRatings(filepath, teamName)
+	if len(teamInfo) == 0 {
+		return &Team{}
+	}
+	team := &Team{}
 	team.Name = teamName
-	team.HomeRating, err = strconv.ParseFloat(data[1], 64)
+	var err error
+	team.HomeRating, err = strconv.ParseFloat(teamInfo[1], 64)
 	if err != nil {
 		panic(err)
 	}
-	team.AwayRating, err = strconv.ParseFloat(data[2], 64)
+	team.AwayRating, err = strconv.ParseFloat(teamInfo[2], 64)
 	if err != nil {
 		panic(err)
 	}
-	team.ContinuousPerformanceHome, err = strconv.Atoi(data[3])
+	team.ContinuousPerformanceHome, err = strconv.Atoi(teamInfo[3])
 	if err != nil {
 		panic(err)
 	}
-	team.ContinuousPerformanceAway, err = strconv.Atoi(data[4])
+	team.ContinuousPerformanceAway, err = strconv.Atoi(teamInfo[4])
 	if err != nil {
 		panic(err)
 	}
