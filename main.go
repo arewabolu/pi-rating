@@ -10,7 +10,9 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-//Calculate New Home rating for both teams
+// Calculate New Home rating for both teams
+// TODO: make a function for creating a new rating file
+// func needs the team names that's all
 
 const (
 	delta  = 2.5
@@ -45,8 +47,6 @@ func errorGD(goalDifference int, expectedGoalDifference float64) float64 {
 func errorGDFunc(errorGD float64) float64 { return 3 * math.Log10(1+errorGD) }
 
 func goalDifference(homeGoal, awayGoal int) int { return homeGoal - awayGoal }
-
-func TotalProvisionalRating(homeTeamPR, awayTeamPR float64) float64 { return homeTeamPR - awayTeamPR }
 
 func (t *Team) ProvisionalRatingHome() float64 {
 	sub := t.ContinuousPerformanceHome - 1
@@ -270,7 +270,6 @@ func Search(filepath string, teamName, venue string) *Team {
 			team.HomeRating = team.ProvisionalRatingHomeV2()
 		}
 	}
-
 	return team
 }
 
