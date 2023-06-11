@@ -13,7 +13,9 @@ import (
 // Calculate New Home rating for both teams
 // TODO: make a function for creating a new rating file
 // func needs the team names that's all
-
+// TODO: handle all errors properly removing panic,
+//
+//	provide another way to manage team form
 const (
 	delta  = 2.5
 	gamma  = 0.79
@@ -23,11 +25,13 @@ const (
 )
 
 type Team struct {
-	Name                      string
-	HomeRating                float64
-	AwayRating                float64
+	Name       string
+	HomeRating float64
+	AwayRating float64
+	// Continuous Performance values are a measure of a team's recent form at home
 	ContinuousPerformanceHome int
-	ContinuousPerformanceAway int //continuous performance is either over or under
+	// Continuous Performance values are a measure of a team's recent form at away
+	ContinuousPerformanceAway int
 }
 
 func ExpectedGoalIndividual(rating float64) float64 {
@@ -48,7 +52,7 @@ func errorGDFunc(errorGD float64) float64 { return 3 * math.Log10(1+errorGD) }
 
 func goalDifference(homeGoal, awayGoal int) int { return homeGoal - awayGoal }
 
-func (t *Team) ProvisionalRatingHome() float64 {
+func (t *Team) provisionalRatingHome() float64 {
 	sub := t.ContinuousPerformanceHome - 1
 	f := float64(sub)
 	denum := math.Pow(f, delta)
@@ -56,15 +60,15 @@ func (t *Team) ProvisionalRatingHome() float64 {
 	return t.HomeRating + (Mu * total)
 }
 
-func (t *Team) ProvisionalRatingAway() float64 {
+func (t *Team) provisionalRatingAway() float64 {
 	sub := t.ContinuousPerformanceAway - 1
 	f := float64(sub)
-	denum := -math.Pow(math.Abs(f), delta)
+	denum := math.Pow(math.Abs(f), delta)
 	total := f / denum
 	return t.AwayRating + (-Mu * total)
 }
 
-func (t *Team) ProvisionalRatingAwayV2() float64 {
+func (t *Team) provisionalRatingAwayV2() float64 {
 	sub := t.ContinuousPerformanceAway - 1
 	f := float64(sub)
 	denum := math.Pow(f, delta)
@@ -72,50 +76,50 @@ func (t *Team) ProvisionalRatingAwayV2() float64 {
 	return t.AwayRating + (Mu * total)
 }
 
-func (t *Team) ProvisionalRatingHomeV2() float64 {
+func (t *Team) provisionalRatingHomeV2() float64 {
 	sub := t.ContinuousPerformanceHome - 1
 	f := float64(sub)
-	denum := -math.Pow(math.Abs(f), delta)
+	denum := math.Pow(math.Abs(f), delta)
 	total := f / denum
 	return t.HomeRating + (-Mu * total)
 }
 
 // returns home and away background ratings for a given team
-func (t *Team) UpdateBackgroundHomeTeamRatings(errorGDFunc float64) {
+func (t *Team) updateBackgroundHomeTeamRatings(errorGDFunc float64) {
 	BRH := t.HomeRating + (errorGDFunc * lambda)
 	BRA := t.AwayRating + ((BRH - t.HomeRating) * gamma)
 	t.HomeRating = BRH
 	t.AwayRating = BRA
 }
 
-func (t *Team) UpdateBackgroundAwayTeamRatings(errorGDFunc float64) {
+func (t *Team) updateBackgroundAwayTeamRatings(errorGDFunc float64) {
 	BRA := t.AwayRating + (errorGDFunc * lambda)
 	BRH := t.HomeRating + ((BRA - t.AwayRating) * gamma)
 	t.AwayRating = BRA
 	t.HomeRating = BRH
 }
 
-func (t *Team) ResetContinuousPerformanceHome() {
+func (t *Team) resetContinuousPerformanceHome() {
 	t.ContinuousPerformanceHome = 0
 }
 
-func (t *Team) ResetContinuousPerformanceAway() {
+func (t *Team) resetContinuousPerformanceAway() {
 	t.ContinuousPerformanceAway = 0
 }
 
-func (t *Team) UpdateContinuousPerformanceHome() {
+func (t *Team) updateContinuousPerformanceHome() {
 	t.ContinuousPerformanceHome = t.ContinuousPerformanceHome + 1
 }
 
-func (t *Team) UpdateContinuousPerformanceAway() {
+func (t *Team) updateContinuousPerformanceAway() {
 	t.ContinuousPerformanceAway = t.ContinuousPerformanceAway - 1
 }
 
-func (t *Team) UpdateContinuousPerformanceHomeV2() {
+func (t *Team) updateContinuousPerformanceHomeV2() {
 	t.ContinuousPerformanceHome = t.ContinuousPerformanceHome - 1
 }
 
-func (t *Team) UpdateContinuousPerformanceAwayV2() {
+func (t *Team) updateContinuousPerformanceAwayV2() {
 	t.ContinuousPerformanceAway = t.ContinuousPerformanceAway + 1
 }
 
@@ -188,29 +192,29 @@ func UpdateTeamRatings(filepath string, homeTeamName, awayTeamName string, homeG
 		HomeErrFunc = errFunc
 		AwayErrFunc = -errFunc
 	}
-	HomeTeam.UpdateBackgroundHomeTeamRatings(HomeErrFunc)
-	AwayTeam.UpdateBackgroundAwayTeamRatings(AwayErrFunc)
+	HomeTeam.updateBackgroundHomeTeamRatings(HomeErrFunc)
+	AwayTeam.updateBackgroundAwayTeamRatings(AwayErrFunc)
 
 	switch {
 	case xGD >= 0 && GD > 0:
-		HomeTeam.UpdateContinuousPerformanceHome()
-		AwayTeam.UpdateContinuousPerformanceAway()
+		HomeTeam.updateContinuousPerformanceHome()
+		AwayTeam.updateContinuousPerformanceAway()
 	case xGD > 0 && GD < 0:
-		HomeTeam.ResetContinuousPerformanceHome()
-		HomeTeam.UpdateContinuousPerformanceHomeV2()
-		AwayTeam.ResetContinuousPerformanceAway()
-		AwayTeam.UpdateContinuousPerformanceAwayV2()
+		HomeTeam.resetContinuousPerformanceHome()
+		HomeTeam.updateContinuousPerformanceHomeV2()
+		AwayTeam.resetContinuousPerformanceAway()
+		AwayTeam.updateContinuousPerformanceAwayV2()
 	case xGD < 0 && GD > 0:
-		AwayTeam.ResetContinuousPerformanceAway()
-		AwayTeam.UpdateContinuousPerformanceAway()
-		HomeTeam.ResetContinuousPerformanceHome()
-		HomeTeam.UpdateContinuousPerformanceHome()
+		AwayTeam.resetContinuousPerformanceAway()
+		AwayTeam.updateContinuousPerformanceAway()
+		HomeTeam.resetContinuousPerformanceHome()
+		HomeTeam.updateContinuousPerformanceHome()
 	case xGD <= 0 && GD < 0:
-		AwayTeam.UpdateContinuousPerformanceAwayV2()
-		HomeTeam.UpdateContinuousPerformanceHomeV2()
+		AwayTeam.updateContinuousPerformanceAwayV2()
+		HomeTeam.updateContinuousPerformanceHomeV2()
 	case xGD > 0 || xGD < 0 && GD == 0:
-		HomeTeam.ResetContinuousPerformanceHome()
-		AwayTeam.ResetContinuousPerformanceAway()
+		HomeTeam.resetContinuousPerformanceHome()
+		AwayTeam.resetContinuousPerformanceAway()
 	}
 	HTWrite := []string{HomeTeam.Name, fmt.Sprintf("%.2f", HomeTeam.HomeRating), fmt.Sprintf("%.2f", HomeTeam.AwayRating), fmt.Sprintf("%d", HomeTeam.ContinuousPerformanceHome), fmt.Sprintf("%d", HomeTeam.ContinuousPerformanceAway)}
 	ATWrite := []string{AwayTeam.Name, fmt.Sprintf("%.2f", AwayTeam.HomeRating), fmt.Sprintf("%.2f", AwayTeam.AwayRating), fmt.Sprintf("%d", AwayTeam.ContinuousPerformanceHome), fmt.Sprintf("%d", AwayTeam.ContinuousPerformanceAway)}
@@ -219,27 +223,31 @@ func UpdateTeamRatings(filepath string, homeTeamName, awayTeamName string, homeG
 	return nil
 }
 
-func CheckRatings(filepath string, team string) []string {
+func CheckRatings(filepath string, team string) ([]string, error) {
 	ratings, err := csvmanager.ReadCsv(filepath, 0755, true)
 	if err != nil {
 		panic(err)
 	}
+	_, headerErr := ratings.CheckHeader("TeamName")
+	if headerErr != nil {
+		return []string{}, err
+	}
 	TeamCol := ratings.Col("TeamName").String()
 	index := slices.Index(TeamCol, team)
 	if index != -1 {
-		return ratings.Row(index).String()
+		return ratings.Row(index).String(), nil
 	}
-	return []string{}
+	return []string{}, fmt.Errorf("%s not registered. please make sure team is already registered", team)
 }
 
 func Search(filepath string, teamName, venue string) *Team {
-	teamInfo := CheckRatings(filepath, teamName)
-	if len(teamInfo) == 0 {
+	teamInfo, err := CheckRatings(filepath, teamName)
+	if err != nil {
 		return &Team{}
 	}
 	team := &Team{}
 	team.Name = teamName
-	var err error
+
 	team.HomeRating, err = strconv.ParseFloat(teamInfo[1], 64)
 	if err != nil {
 		panic(err)
@@ -258,16 +266,16 @@ func Search(filepath string, teamName, venue string) *Team {
 	}
 	if venue == "away" {
 		if team.ContinuousPerformanceAway > 1 {
-			team.AwayRating = team.ProvisionalRatingAwayV2()
+			team.AwayRating = team.provisionalRatingAwayV2()
 		} else if team.ContinuousPerformanceAway < -1 {
-			team.AwayRating = team.ProvisionalRatingAway()
+			team.AwayRating = team.provisionalRatingAway()
 		}
 	}
 	if venue == "home" {
 		if team.ContinuousPerformanceHome > 1 {
-			team.HomeRating = team.ProvisionalRatingHome()
+			team.HomeRating = team.provisionalRatingHome()
 		} else if team.ContinuousPerformanceHome < -1 {
-			team.HomeRating = team.ProvisionalRatingHomeV2()
+			team.HomeRating = team.provisionalRatingHomeV2()
 		}
 	}
 	return team
