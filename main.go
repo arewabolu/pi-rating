@@ -228,26 +228,26 @@ func CheckRatings(filepath string, team string) ([]string, error) {
 	if err != nil {
 		panic(err)
 	}
-	_, headerErr := ratings.CheckHeader("TeamName")
-	if headerErr != nil {
-		return []string{}, err
+
+	if !slices.Contains(ratings.ListHeaders(), "TeamName") {
+		return nil, err
 	}
 	TeamCol := ratings.Col("TeamName").String()
 	index := slices.Index(TeamCol, team)
 	if index != -1 {
 		return ratings.Row(index).String(), nil
 	}
-	return []string{}, fmt.Errorf("%s not registered. please make sure team is already registered", team)
+	return nil, fmt.Errorf("%s not registered. please make sure team is already registered", team)
 }
 
-func Search(filepath string, teamName, venue string) *Team {
+func Search(filepath string, teamName, venue string) (*Team, error) {
 	teamInfo, err := CheckRatings(filepath, teamName)
 	if err != nil {
-		return &Team{}
+		return nil, err
 	}
 	team := &Team{}
 	team.Name = teamName
-
+	fmt.Println(teamInfo)
 	team.HomeRating, err = strconv.ParseFloat(teamInfo[1], 64)
 	if err != nil {
 		panic(err)
@@ -278,7 +278,7 @@ func Search(filepath string, teamName, venue string) *Team {
 			team.HomeRating = team.provisionalRatingHomeV2()
 		}
 	}
-	return team
+	return team, nil
 }
 
 func TotalBackgroundRating(homeRating, awayRating float64) float64 {
