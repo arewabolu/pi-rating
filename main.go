@@ -18,8 +18,8 @@ import (
 //	provide another way to manage team form
 const (
 	delta  = 2.5
-	gamma  = 0.79
-	lambda = 0.054
+	gamma  = 0.79  //0.70
+	lambda = 0.054 //  0.035/
 	Mu     = 0.01
 	phi    = 1 //form factor
 )
@@ -226,7 +226,7 @@ func UpdateTeamRatings(filepath string, homeTeamName, awayTeamName string, homeG
 func CheckRatings(filepath string, team string) ([]string, error) {
 	ratings, err := csvmanager.ReadCsv(filepath, 0755, true)
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("%s not found", filepath)
 	}
 
 	if !slices.Contains(ratings.ListHeaders(), "TeamName") {
@@ -240,30 +240,37 @@ func CheckRatings(filepath string, team string) ([]string, error) {
 	return nil, fmt.Errorf("%s not registered. please make sure team is already registered", team)
 }
 
-func Search(filepath string, teamName, venue string) (*Team, error) {
+func Search(filepath string, teamName string) (Team, error) {
 	teamInfo, err := CheckRatings(filepath, teamName)
 	if err != nil {
-		return nil, err
+		return Team{}, err
 	}
-	team := &Team{}
+	team := Team{}
 	team.Name = teamName
-	fmt.Println(teamInfo)
 	team.HomeRating, err = strconv.ParseFloat(teamInfo[1], 64)
 	if err != nil {
-		panic(err)
+		return Team{}, fmt.Errorf("%s: %v is not a number", teamName, team.HomeRating)
 	}
 	team.AwayRating, err = strconv.ParseFloat(teamInfo[2], 64)
 	if err != nil {
-		panic(err)
+		return Team{}, fmt.Errorf("%s: %v is not a number", teamName, team.AwayRating)
 	}
 	team.ContinuousPerformanceHome, err = strconv.Atoi(teamInfo[3])
 	if err != nil {
-		panic(err)
+		return Team{}, fmt.Errorf("%s: %v is not a number", teamName, team.ContinuousPerformanceHome)
 	}
 	team.ContinuousPerformanceAway, err = strconv.Atoi(teamInfo[4])
 	if err != nil {
-		panic(err)
+		return Team{}, fmt.Errorf("%s: %v is not a number", teamName, team.ContinuousPerformanceAway)
 	}
+	return team, nil
+}
+
+func TotalBackgroundRating(homeRating, awayRating float64) float64 {
+	return homeRating + awayRating
+}
+
+func ProvisionalRating(team Team, venue string) Team {
 	if venue == "away" {
 		if team.ContinuousPerformanceAway > 1 {
 			team.AwayRating = team.provisionalRatingAwayV2()
@@ -278,9 +285,5 @@ func Search(filepath string, teamName, venue string) (*Team, error) {
 			team.HomeRating = team.provisionalRatingHomeV2()
 		}
 	}
-	return team, nil
-}
-
-func TotalBackgroundRating(homeRating, awayRating float64) float64 {
-	return homeRating + awayRating
+	return team
 }
