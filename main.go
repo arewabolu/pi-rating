@@ -240,7 +240,7 @@ func CheckRatings(filepath string, team string) ([]string, error) {
 	return nil, fmt.Errorf("%s not registered. please make sure team is already registered", team)
 }
 
-func Search(filepath string, teamName string) (Team, error) {
+func Search(filepath string, teamName, venue string) (Team, error) {
 	teamInfo, err := CheckRatings(filepath, teamName)
 	if err != nil {
 		return Team{}, err
@@ -262,6 +262,21 @@ func Search(filepath string, teamName string) (Team, error) {
 	team.ContinuousPerformanceAway, err = strconv.Atoi(teamInfo[4])
 	if err != nil {
 		return Team{}, fmt.Errorf("%s: %v is not a number", teamName, team.ContinuousPerformanceAway)
+
+	}
+	if venue == "away" {
+		if team.ContinuousPerformanceAway > 1 {
+			team.AwayRating = team.provisionalRatingAwayV2()
+		} else if team.ContinuousPerformanceAway < -1 {
+			team.AwayRating = team.provisionalRatingAway()
+		}
+	}
+	if venue == "home" {
+		if team.ContinuousPerformanceHome > 1 {
+			team.HomeRating = team.provisionalRatingHome()
+		} else if team.ContinuousPerformanceHome < -1 {
+			team.HomeRating = team.provisionalRatingHomeV2()
+		}
 	}
 	return team, nil
 }
