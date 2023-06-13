@@ -270,20 +270,20 @@ func TotalBackgroundRating(homeRating, awayRating float64) float64 {
 	return homeRating + awayRating
 }
 
-func ProvisionalRating(team Team, venue string) Team {
+func (t *Team) ProvisionalRating(venue string) Team {
 	if venue == "away" {
-		if team.ContinuousPerformanceAway > 1 {
-			team.AwayRating = team.provisionalRatingAwayV2()
-		} else if team.ContinuousPerformanceAway < -1 {
-			team.AwayRating = team.provisionalRatingAway()
+		if t.ContinuousPerformanceAway > 1 {
+			t.AwayRating = t.provisionalRatingAwayV2()
+		} else if t.ContinuousPerformanceAway < -1 {
+			t.AwayRating = t.provisionalRatingAway()
 		}
 	}
 	if venue == "home" {
-		if team.ContinuousPerformanceHome > 1 {
-			team.HomeRating = team.provisionalRatingHome()
-		} else if team.ContinuousPerformanceHome < -1 {
-			team.HomeRating = team.provisionalRatingHomeV2()
+		if t.ContinuousPerformanceHome > 1 {
+			t.HomeRating = t.provisionalRatingHome()
+		} else if t.ContinuousPerformanceHome < -1 {
+			t.HomeRating = t.provisionalRatingHomeV2()
 		}
 	}
-	return team
+	return *t
 }
