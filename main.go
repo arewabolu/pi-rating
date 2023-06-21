@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"strconv"
+	"strings"
 
 	"github.com/arewabolu/csvmanager"
 	"golang.org/x/exp/slices"
@@ -131,14 +132,10 @@ func UpdateTeamRatings(filepath string, homeTeamName, awayTeamName string, homeG
 	TeamCol := ratings.Col("TeamName").String()
 
 	HomeTeam := &Team{Name: homeTeamName}
-	AwayTeam := &Team{Name: awayTeamName}
+
 	HToccurence := slices.Index(TeamCol, HomeTeam.Name)
 	if HToccurence == -1 {
 		return errors.New("couldn't find specified team " + HomeTeam.Name)
-	}
-	AToccurence := slices.Index(TeamCol, AwayTeam.Name)
-	if AToccurence == -1 {
-		return errors.New("couldn't find specified team " + AwayTeam.Name)
 	}
 	if HToccurence > -1 {
 		HTData := ratings.Row(HToccurence).String()
@@ -159,6 +156,12 @@ func UpdateTeamRatings(filepath string, homeTeamName, awayTeamName string, homeG
 			panic(err)
 		}
 	}
+
+	AwayTeam := &Team{Name: awayTeamName}
+	AToccurence := slices.Index(TeamCol, AwayTeam.Name)
+	if AToccurence == -1 {
+		return errors.New("couldn't find specified team " + AwayTeam.Name)
+	}
 	if AToccurence > -1 {
 		ATData := ratings.Row(AToccurence).String()
 		AwayTeam.HomeRating, err = strconv.ParseFloat(ATData[1], 64)
@@ -178,10 +181,12 @@ func UpdateTeamRatings(filepath string, homeTeamName, awayTeamName string, homeG
 			panic(err)
 		}
 	}
+
 	HxG := ExpectedGoalIndividual(HomeTeam.HomeRating)
 	AxG := ExpectedGoalIndividual(AwayTeam.AwayRating)
 	xGD := ExpectedGoalDifference(HxG, AxG)
 	GD := goalDifference(homeGoalScored, awayGoalScored)
+
 	var HomeErrFunc, AwayErrFunc float64
 	errFunc := errorGDFunc(errorGD(GD, xGD))
 	if xGD > float64(GD) {
@@ -216,11 +221,14 @@ func UpdateTeamRatings(filepath string, homeTeamName, awayTeamName string, homeG
 		HomeTeam.resetContinuousPerformanceHome()
 		AwayTeam.resetContinuousPerformanceAway()
 	}
-	HTWrite := []string{HomeTeam.Name, fmt.Sprintf("%.2f", HomeTeam.HomeRating), fmt.Sprintf("%.2f", HomeTeam.AwayRating), fmt.Sprintf("%d", HomeTeam.ContinuousPerformanceHome), fmt.Sprintf("%d", HomeTeam.ContinuousPerformanceAway)}
-	ATWrite := []string{AwayTeam.Name, fmt.Sprintf("%.2f", AwayTeam.HomeRating), fmt.Sprintf("%.2f", AwayTeam.AwayRating), fmt.Sprintf("%d", AwayTeam.ContinuousPerformanceHome), fmt.Sprintf("%d", AwayTeam.ContinuousPerformanceAway)}
-	csvmanager.ReplaceRow(filepath, 0755, HToccurence+1, HTWrite)
-	csvmanager.ReplaceRow(filepath, 0755, AToccurence+1, ATWrite)
+
 	return nil
+}
+
+func (t *Team) WriteRatings(filepath string, index int) error {
+	team := []string{t.Name, fmt.Sprintf("%.2f", t.HomeRating), fmt.Sprintf("%.2f", t.AwayRating), fmt.Sprintf("%d", t.ContinuousPerformanceHome), fmt.Sprintf("%d", t.ContinuousPerformanceAway)}
+	err := csvmanager.ReplaceRow(filepath, 0755, index, team)
+	return err
 }
 
 func CheckRatings(filepath string, team string) ([]string, error) {
@@ -264,41 +272,30 @@ func Search(filepath string, teamName, venue string) (Team, error) {
 		return Team{}, fmt.Errorf("%s: %v is not a number", teamName, team.ContinuousPerformanceAway)
 
 	}
-	if venue == "away" {
-		if team.ContinuousPerformanceAway > 1 {
-			team.AwayRating = team.provisionalRatingAwayV2()
-		} else if team.ContinuousPerformanceAway < -1 {
-			team.AwayRating = team.provisionalRatingAway()
-		}
-	}
-	if venue == "home" {
-		if team.ContinuousPerformanceHome > 1 {
-			team.HomeRating = team.provisionalRatingHome()
-		} else if team.ContinuousPerformanceHome < -1 {
-			team.HomeRating = team.provisionalRatingHomeV2()
-		}
-	}
+
 	return team, nil
 }
 
-func TotalBackgroundRating(homeRating, awayRating float64) float64 {
-	return homeRating + awayRating
+func RatingDifference(homeRating, awayRating float64) float64 {
+	return homeRating - awayRating
 }
 
 func (t *Team) ProvisionalRating(venue string) Team {
-	if venue == "away" {
+	venue = strings.ToLower(venue)
+	switch venue {
+	case "away":
 		if t.ContinuousPerformanceAway > 1 {
 			t.AwayRating = t.provisionalRatingAwayV2()
 		} else if t.ContinuousPerformanceAway < -1 {
 			t.AwayRating = t.provisionalRatingAway()
 		}
-	}
-	if venue == "home" {
+	case "home":
 		if t.ContinuousPerformanceHome > 1 {
 			t.HomeRating = t.provisionalRatingHome()
 		} else if t.ContinuousPerformanceHome < -1 {
 			t.HomeRating = t.provisionalRatingHomeV2()
 		}
+
 	}
 	return *t
 }
