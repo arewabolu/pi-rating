@@ -9,6 +9,8 @@ import (
 	"golang.org/x/exp/slices"
 )
 
+const ratingFilepath = "./matchdata/ratingsfifa4x4Eng.csv"
+
 func TestNewRating(t *testing.T) {
 	HT := &Team{
 		Name:                      "Leicester",
@@ -28,10 +30,10 @@ func TestNewRating(t *testing.T) {
 	goalScoredA := 1
 	errFunc := errorGDFunc(errorGD(goalDifference(goalScoredH, goalScoredA), ExpectedGoalDifference(HXG, AXG)))
 	//t.Error(HT.ProvisionalRatingHome())
-	HT.UpdateBackgroundHomeTeamRatings(errFunc)
-	HT.UpdateContinuousPerformanceHome()
-	AT.UpdateContinuousPerformanceAway()
-	t.Error(AT.ProvisionalRatingAway())
+	HT.updateBackgroundHomeTeamRatings(errFunc)
+	HT.updateContinuousPerformanceHome()
+	AT.updateContinuousPerformanceAway()
+	t.Error(AT.provisionalRatingAway())
 }
 
 func TestReader(t *testing.T) {
@@ -118,24 +120,24 @@ func TestReader(t *testing.T) {
 			t.Error("before away", AwayTeam, ratings.Row(AToccurence).String())
 		}
 
-		HomeTeam.UpdateBackgroundHomeTeamRatings(HomeErrFunc)
-		AwayTeam.UpdateBackgroundAwayTeamRatings(AwayErrFunc)
+		HomeTeam.updateBackgroundHomeTeamRatings(HomeErrFunc)
+		AwayTeam.updateBackgroundAwayTeamRatings(AwayErrFunc)
 		switch {
 		case xGD >= 0 && GD > 0:
-			HomeTeam.UpdateContinuousPerformanceHome()
-			AwayTeam.UpdateContinuousPerformanceAway()
+			HomeTeam.updateContinuousPerformanceHome()
+			AwayTeam.updateContinuousPerformanceAway()
 		case xGD > 0 && GD < 0:
-			HomeTeam.ResetContinuousPerformanceHome()
-			AwayTeam.ResetContinuousPerformanceAway()
+			HomeTeam.resetContinuousPerformanceHome()
+			AwayTeam.resetContinuousPerformanceAway()
 		case xGD < 0 && GD > 0:
-			AwayTeam.ResetContinuousPerformanceAway()
-			HomeTeam.ResetContinuousPerformanceHome()
+			AwayTeam.resetContinuousPerformanceAway()
+			HomeTeam.resetContinuousPerformanceHome()
 		case xGD <= 0 && GD < 0:
-			AwayTeam.UpdateContinuousPerformanceAwayV2()
-			HomeTeam.UpdateContinuousPerformanceHomeV2()
+			AwayTeam.updateContinuousPerformanceAwayV2()
+			HomeTeam.updateContinuousPerformanceHomeV2()
 		case xGD > 0 || xGD < 0 && GD == 0:
-			HomeTeam.ResetContinuousPerformanceHome()
-			AwayTeam.ResetContinuousPerformanceAway()
+			HomeTeam.resetContinuousPerformanceHome()
+			AwayTeam.resetContinuousPerformanceAway()
 		}
 
 		//file, _ := os.OpenFile("./matchdata/ratingsfifa4x4Eng.csv", os.O_CREATE|os.O_RDWR|os.O_APPEND, 0755)
@@ -155,81 +157,28 @@ func TestReader(t *testing.T) {
 }
 
 func TestUpdateTeamRatings(t *testing.T) {
-	data, err := csvmanager.ReadCsv("./matchdata/fifa4x4Eng.csv", 0755, true)
-	if err != nil {
-		panic(err)
-	}
-	rows := data.Rows()
-	for _, game := range rows {
-		match := game.String()
-		HomeTeam := &Team{Name: match[0]}
-		AwayTeam := &Team{Name: match[1]}
-		homeGoal, err := strconv.Atoi(match[2])
-		if err != nil {
-			t.Error(err)
-			t.FailNow()
-		}
-		awayGoal, err := strconv.Atoi(match[3])
-		if err != nil {
-			t.Error(err)
-			t.FailNow()
-		}
-		err = UpdateTeamRatings("./matchdata/ratingsfifa4x4Eng.csv", HomeTeam.Name, AwayTeam.Name, homeGoal, awayGoal)
-		if err != nil {
-			t.Error(err)
-			t.Fail()
-		}
-	}
-
-	//UpdateTeamRatings("LIV", "NOR", 4, 1)
+	_, AT, _ := UpdateTeamRatings("./matchdata/ratingsfifa4x4Eng.csv", "EVE", "AVL", 2, 2)
+	t.Error(AT)
+	AT.WriteRatings("./matchdata/ratingsfifa4x4Eng.csv")
 }
 
 func TestSearchRankings(t *testing.T) {
-	hT := Search("./matchdata/ratingsfifa4x4Eng.csv", "LEI", "home")
-	aT := Search("./matchdata/ratingsfifa4x4Eng.csv", "NU", "away")
-	t.Error(hT.HomeRating, aT.AwayRating)
+	hT, err := Search("./matchdata/ratingsfifa4x4Eng.csv", "EVE")
+	if err != nil {
+		t.Error(err)
+		t.Fail()
+	}
+	nwHT := hT.ProvisionalRating("home")
+	aT, _ := Search("./matchdata/ratingsfifa4x4Eng.csv", "MCI")
+	t.Error(nwHT.HomeRating, aT.AwayRating)
 }
 
-//
-/*
+func TestCheckRatings(t *testing.T) {
+	team, _ := CheckRatings(ratingFilepath, "EVE")
+	t.Error(team)
+}
 
-switch {
-	case HToccurence == -1 && AToccurence == -1:
-		HTWrite := []string{HomeTeam.Name, fmt.Sprintf("%.2f", HomeTeam.HomeRating), fmt.Sprintf("%.2f", HomeTeam.AwayRating), fmt.Sprintf("%d", HomeTeam.ContinuousPerformanceHome), fmt.Sprintf("%d", HomeTeam.ContinuousPerformanceAway)}
-		ATWrite := []string{AwayTeam.Name, fmt.Sprintf("%.2f", AwayTeam.HomeRating), fmt.Sprintf("%.2f", AwayTeam.AwayRating), fmt.Sprintf("%d", AwayTeam.ContinuousPerformanceHome), fmt.Sprintf("%d", AwayTeam.ContinuousPerformanceAway)}
-		writeRatings := csvmanager.WriteFrame{
-			Row:    true,
-			Arrays: [][]string{HTWrite, ATWrite}, //
-			File:   file,
-		}
-		writeRatings.WriteCSV()
-		file.Close()
-		t.Error("case 1")
-	case HToccurence > -1 && AToccurence == -1:
-		HTWrite := []string{HomeTeam.Name, fmt.Sprintf("%.2f", HomeTeam.HomeRating), fmt.Sprintf("%.2f", HomeTeam.AwayRating), fmt.Sprintf("%d", HomeTeam.ContinuousPerformanceHome), fmt.Sprintf("%d", HomeTeam.ContinuousPerformanceAway)}
-		csvmanager.ReplaceRow("./matchdata/ratingsfifa4x4Eng.csv", 0755, HToccurence+1, HTWrite)
-		ATWrite := []string{AwayTeam.Name, fmt.Sprintf("%.2f", AwayTeam.HomeRating), fmt.Sprintf("%.2f", AwayTeam.AwayRating), fmt.Sprintf("%d", AwayTeam.ContinuousPerformanceHome), fmt.Sprintf("%d", AwayTeam.ContinuousPerformanceAway)}
-		writeRatings := csvmanager.WriteFrame{
-			Row:    true,
-			Arrays: [][]string{ATWrite}, //
-			File:   file,
-		}
-		writeRatings.WriteCSV()
-		file.Close()
-		t.Error("case 2")
-	case AToccurence > -1 && HToccurence == -1:
-		HTWrite := []string{HomeTeam.Name, fmt.Sprintf("%.2f", HomeTeam.HomeRating), fmt.Sprintf("%.2f", HomeTeam.AwayRating), fmt.Sprintf("%d", HomeTeam.ContinuousPerformanceHome), fmt.Sprintf("%d", HomeTeam.ContinuousPerformanceAway)}
-		writeRatings := csvmanager.WriteFrame{
-			Row:    true,
-			Arrays: [][]string{HTWrite}, //
-			File:   file,
-		}
-		writeRatings.WriteCSV()
-		file.Close()
-		ATWrite := []string{AwayTeam.Name, fmt.Sprintf("%.2f", AwayTeam.HomeRating), fmt.Sprintf("%.2f", AwayTeam.AwayRating), fmt.Sprintf("%v", AwayTeam.ContinuousPerformanceHome), fmt.Sprintf("%v", AwayTeam.ContinuousPerformanceAway)}
-		csvmanager.ReplaceRow("./matchdata/ratingsfifa4x4Eng.csv", 0755, AToccurence+1, ATWrite)
-		t.Error("case 3")
-	case HToccurence > -1 && AToccurence > -1:
-
-		t.Error("case 4")
-	}*/
+func TestSetInfo(t *testing.T) {
+	team, _ := SetTeamInfo(ratingFilepath, "MCI")
+	t.Error(team)
+}

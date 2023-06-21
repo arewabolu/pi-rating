@@ -1,7 +1,6 @@
 package pi
 
 import (
-	"errors"
 	"fmt"
 	"math"
 	"strconv"
@@ -126,72 +125,50 @@ func (t *Team) updateContinuousPerformanceAwayV2() {
 	t.ContinuousPerformanceAway = t.ContinuousPerformanceAway + 1
 }
 
+func SetTeamInfo(filepath string, teamName string) (Team, error) {
+	teamData, err := CheckRatings(filepath, teamName)
+	if err != nil {
+		return Team{}, err
+	}
+	team := Team{Name: teamName}
+	team.HomeRating, err = strconv.ParseFloat(teamData[1], 64)
+	if err != nil {
+		panic(err)
+	}
+	team.AwayRating, err = strconv.ParseFloat(teamData[2], 64)
+	if err != nil {
+		panic(err)
+	}
+	team.ContinuousPerformanceHome, err = strconv.Atoi(teamData[3])
+	if err != nil {
+		panic(err)
+	}
+	team.ContinuousPerformanceAway, err = strconv.Atoi(teamData[4])
+	if err != nil {
+		panic(err)
+	}
+	team.index, err = strconv.Atoi(teamData[5])
+	if err != nil {
+		panic(err)
+	}
+	return team, nil
+}
+
 // Update total team information in the Team struct
 //
 // Error should be checked first before trying to use team struct
 func UpdateTeamRatings(filepath string, homeTeamName, awayTeamName string, homeGoalScored, awayGoalScored int) (Team, Team, error) {
-	ratings, err := csvmanager.ReadCsv(filepath, 0755, true)
+	HTData, err := SetTeamInfo(filepath, homeTeamName)
 	if err != nil {
-		panic(err)
+		return Team{}, Team{}, err
 	}
-	TeamCol := ratings.Col("TeamName").String()
-
-	HomeTeam := &Team{Name: homeTeamName}
-
-	HToccurence := slices.Index(TeamCol, HomeTeam.Name)
-	if HToccurence == -1 {
-		return Team{}, Team{}, errors.New("couldn't find specified team " + HomeTeam.Name)
-	}
-	if HToccurence > -1 {
-		HTData := ratings.Row(HToccurence).String()
-		HomeTeam.HomeRating, err = strconv.ParseFloat(HTData[1], 64)
-		if err != nil {
-			panic(err)
-		}
-		HomeTeam.AwayRating, err = strconv.ParseFloat(HTData[2], 64)
-		if err != nil {
-			panic(err)
-		}
-		HomeTeam.ContinuousPerformanceHome, err = strconv.Atoi(HTData[3])
-		if err != nil {
-			panic(err)
-		}
-		HomeTeam.ContinuousPerformanceAway, err = strconv.Atoi(HTData[4])
-		if err != nil {
-			panic(err)
-		}
-		HomeTeam.index = HToccurence
+	ATData, err := SetTeamInfo(filepath, awayTeamName)
+	if err != nil {
+		return Team{}, Team{}, err
 	}
 
-	AwayTeam := &Team{Name: awayTeamName}
-	AToccurence := slices.Index(TeamCol, AwayTeam.Name)
-	if AToccurence == -1 {
-		return Team{}, Team{}, errors.New("couldn't find specified team " + AwayTeam.Name)
-	}
-	if AToccurence > -1 {
-		ATData := ratings.Row(AToccurence).String()
-		AwayTeam.HomeRating, err = strconv.ParseFloat(ATData[1], 64)
-		if err != nil {
-			panic(err)
-		}
-		AwayTeam.AwayRating, err = strconv.ParseFloat(ATData[2], 64)
-		if err != nil {
-			panic(err)
-		}
-		AwayTeam.ContinuousPerformanceHome, err = strconv.Atoi(ATData[3])
-		if err != nil {
-			panic(err)
-		}
-		AwayTeam.ContinuousPerformanceAway, err = strconv.Atoi(ATData[4])
-		if err != nil {
-			panic(err)
-		}
-		//resolve write error
-		AwayTeam.index = AToccurence
-	}
-
-	HxG := ExpectedGoalIndividual(HomeTeam.HomeRating)
-	AxG := ExpectedGoalIndividual(AwayTeam.AwayRating)
+	HxG := ExpectedGoalIndividual(HTData.HomeRating)
+	AxG := ExpectedGoalIndividual(ATData.AwayRating)
 	xGD := ExpectedGoalDifference(HxG, AxG)
 	GD := goalDifference(homeGoalScored, awayGoalScored)
 
@@ -205,32 +182,32 @@ func UpdateTeamRatings(filepath string, homeTeamName, awayTeamName string, homeG
 		HomeErrFunc = errFunc
 		AwayErrFunc = -errFunc
 	}
-	HomeTeam.updateBackgroundHomeTeamRatings(HomeErrFunc)
-	AwayTeam.updateBackgroundAwayTeamRatings(AwayErrFunc)
+	HTData.updateBackgroundHomeTeamRatings(HomeErrFunc)
+	ATData.updateBackgroundAwayTeamRatings(AwayErrFunc)
 
 	switch {
 	case xGD >= 0 && GD > 0:
-		HomeTeam.updateContinuousPerformanceHome()
-		AwayTeam.updateContinuousPerformanceAway()
+		HTData.updateContinuousPerformanceHome()
+		ATData.updateContinuousPerformanceAway()
 	case xGD > 0 && GD < 0:
-		HomeTeam.resetContinuousPerformanceHome()
-		HomeTeam.updateContinuousPerformanceHomeV2()
-		AwayTeam.resetContinuousPerformanceAway()
-		AwayTeam.updateContinuousPerformanceAwayV2()
+		HTData.resetContinuousPerformanceHome()
+		HTData.updateContinuousPerformanceHomeV2()
+		ATData.resetContinuousPerformanceAway()
+		ATData.updateContinuousPerformanceAwayV2()
 	case xGD < 0 && GD > 0:
-		AwayTeam.resetContinuousPerformanceAway()
-		AwayTeam.updateContinuousPerformanceAway()
-		HomeTeam.resetContinuousPerformanceHome()
-		HomeTeam.updateContinuousPerformanceHome()
+		ATData.resetContinuousPerformanceAway()
+		ATData.updateContinuousPerformanceAway()
+		HTData.resetContinuousPerformanceHome()
+		HTData.updateContinuousPerformanceHome()
 	case xGD <= 0 && GD < 0:
-		AwayTeam.updateContinuousPerformanceAwayV2()
-		HomeTeam.updateContinuousPerformanceHomeV2()
+		ATData.updateContinuousPerformanceAwayV2()
+		HTData.updateContinuousPerformanceHomeV2()
 	case xGD > 0 || xGD < 0 && GD == 0:
-		HomeTeam.resetContinuousPerformanceHome()
-		AwayTeam.resetContinuousPerformanceAway()
+		HTData.resetContinuousPerformanceHome()
+		ATData.resetContinuousPerformanceAway()
 	}
 
-	return *HomeTeam, *AwayTeam, nil
+	return HTData, ATData, nil
 }
 
 // Write updated rating to rating file
@@ -254,7 +231,9 @@ func CheckRatings(filepath string, team string) ([]string, error) {
 	TeamCol := ratings.Col("TeamName").String()
 	index := slices.Index(TeamCol, team)
 	if index != -1 {
-		return ratings.Row(index).String(), nil
+		occurence := ratings.Row(index).String()
+		occurence = append(occurence, fmt.Sprint(index))
+		return occurence, nil
 	}
 	return nil, fmt.Errorf("%s not registered. please make sure team is already registered", team)
 }
