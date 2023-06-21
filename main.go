@@ -33,6 +33,7 @@ type Team struct {
 	ContinuousPerformanceHome int
 	// Continuous Performance values are a measure of a team's recent form at away
 	ContinuousPerformanceAway int
+	index                     int
 }
 
 func ExpectedGoalIndividual(rating float64) float64 {
@@ -85,7 +86,7 @@ func (t *Team) provisionalRatingHomeV2() float64 {
 	return t.HomeRating + (-Mu * total)
 }
 
-// returns home and away background ratings for a given team
+// revises home and away background ratings for a given team
 func (t *Team) updateBackgroundHomeTeamRatings(errorGDFunc float64) {
 	BRH := t.HomeRating + (errorGDFunc * lambda)
 	BRA := t.AwayRating + ((BRH - t.HomeRating) * gamma)
@@ -93,6 +94,7 @@ func (t *Team) updateBackgroundHomeTeamRatings(errorGDFunc float64) {
 	t.AwayRating = BRA
 }
 
+// revises home and away background ratings for a given team
 func (t *Team) updateBackgroundAwayTeamRatings(errorGDFunc float64) {
 	BRA := t.AwayRating + (errorGDFunc * lambda)
 	BRH := t.HomeRating + ((BRA - t.AwayRating) * gamma)
@@ -124,7 +126,10 @@ func (t *Team) updateContinuousPerformanceAwayV2() {
 	t.ContinuousPerformanceAway = t.ContinuousPerformanceAway + 1
 }
 
-func UpdateTeamRatings(filepath string, homeTeamName, awayTeamName string, homeGoalScored, awayGoalScored int) error {
+// Update total team information in the Team struct
+//
+// Error should be checked first before trying to use team struct
+func UpdateTeamRatings(filepath string, homeTeamName, awayTeamName string, homeGoalScored, awayGoalScored int) (Team, Team, error) {
 	ratings, err := csvmanager.ReadCsv(filepath, 0755, true)
 	if err != nil {
 		panic(err)
@@ -135,7 +140,7 @@ func UpdateTeamRatings(filepath string, homeTeamName, awayTeamName string, homeG
 
 	HToccurence := slices.Index(TeamCol, HomeTeam.Name)
 	if HToccurence == -1 {
-		return errors.New("couldn't find specified team " + HomeTeam.Name)
+		return Team{}, Team{}, errors.New("couldn't find specified team " + HomeTeam.Name)
 	}
 	if HToccurence > -1 {
 		HTData := ratings.Row(HToccurence).String()
@@ -155,12 +160,13 @@ func UpdateTeamRatings(filepath string, homeTeamName, awayTeamName string, homeG
 		if err != nil {
 			panic(err)
 		}
+		HomeTeam.index = HToccurence
 	}
 
 	AwayTeam := &Team{Name: awayTeamName}
 	AToccurence := slices.Index(TeamCol, AwayTeam.Name)
 	if AToccurence == -1 {
-		return errors.New("couldn't find specified team " + AwayTeam.Name)
+		return Team{}, Team{}, errors.New("couldn't find specified team " + AwayTeam.Name)
 	}
 	if AToccurence > -1 {
 		ATData := ratings.Row(AToccurence).String()
@@ -180,6 +186,8 @@ func UpdateTeamRatings(filepath string, homeTeamName, awayTeamName string, homeG
 		if err != nil {
 			panic(err)
 		}
+		//resolve write error
+		AwayTeam.index = AToccurence
 	}
 
 	HxG := ExpectedGoalIndividual(HomeTeam.HomeRating)
@@ -222,15 +230,18 @@ func UpdateTeamRatings(filepath string, homeTeamName, awayTeamName string, homeG
 		AwayTeam.resetContinuousPerformanceAway()
 	}
 
-	return nil
+	return *HomeTeam, *AwayTeam, nil
 }
 
-func (t *Team) WriteRatings(filepath string, index int) error {
+// Write updated rating to rating file
+func (t *Team) WriteRatings(filepath string) error {
 	team := []string{t.Name, fmt.Sprintf("%.2f", t.HomeRating), fmt.Sprintf("%.2f", t.AwayRating), fmt.Sprintf("%d", t.ContinuousPerformanceHome), fmt.Sprintf("%d", t.ContinuousPerformanceAway)}
-	err := csvmanager.ReplaceRow(filepath, 0755, index, team)
+	err := csvmanager.ReplaceRow(filepath, 0755, t.index+1, team)
 	return err
 }
 
+// Checks if a teams is listed in the rating table
+// and returns the team information if it exists.
 func CheckRatings(filepath string, team string) ([]string, error) {
 	ratings, err := csvmanager.ReadCsv(filepath, 0755, true)
 	if err != nil {
@@ -248,7 +259,10 @@ func CheckRatings(filepath string, team string) ([]string, error) {
 	return nil, fmt.Errorf("%s not registered. please make sure team is already registered", team)
 }
 
-func Search(filepath string, teamName, venue string) (Team, error) {
+// Search for a teams rating
+//
+// Error should be checked first before trying to use team struct
+func Search(filepath string, teamName string) (Team, error) {
 	teamInfo, err := CheckRatings(filepath, teamName)
 	if err != nil {
 		return Team{}, err
@@ -280,7 +294,8 @@ func RatingDifference(homeRating, awayRating float64) float64 {
 	return homeRating - awayRating
 }
 
-func (t *Team) ProvisionalRating(venue string) Team {
+// Should be used to incorporate form into the team ratins
+func (t Team) ProvisionalRating(venue string) Team {
 	venue = strings.ToLower(venue)
 	switch venue {
 	case "away":
@@ -295,7 +310,6 @@ func (t *Team) ProvisionalRating(venue string) Team {
 		} else if t.ContinuousPerformanceHome < -1 {
 			t.HomeRating = t.provisionalRatingHomeV2()
 		}
-
 	}
-	return *t
+	return t
 }
