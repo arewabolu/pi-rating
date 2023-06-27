@@ -125,8 +125,8 @@ func (t *Team) updateContinuousPerformanceAwayV2() {
 	t.ContinuousPerformanceAway = t.ContinuousPerformanceAway + 1
 }
 
-func SetTeamInfo(filepath string, teamName string) (Team, error) {
-	teamData, err := CheckRatings(filepath, teamName)
+func setTeamInfo(filepath string, teamName string) (Team, error) {
+	teamData, err := checkRatings(filepath, teamName)
 	if err != nil {
 		return Team{}, err
 	}
@@ -158,11 +158,11 @@ func SetTeamInfo(filepath string, teamName string) (Team, error) {
 //
 // Error should be checked first before trying to use team struct
 func UpdateTeamRatings(filepath string, homeTeamName, awayTeamName string, homeGoalScored, awayGoalScored int) (Team, Team, error) {
-	HTData, err := SetTeamInfo(filepath, homeTeamName)
+	HTData, err := setTeamInfo(filepath, homeTeamName)
 	if err != nil {
 		return Team{}, Team{}, err
 	}
-	ATData, err := SetTeamInfo(filepath, awayTeamName)
+	ATData, err := setTeamInfo(filepath, awayTeamName)
 	if err != nil {
 		return Team{}, Team{}, err
 	}
@@ -219,7 +219,7 @@ func (t *Team) WriteRatings(filepath string) error {
 
 // Checks if a teams is listed in the rating table
 // and returns the team information if it exists.
-func CheckRatings(filepath string, team string) ([]string, error) {
+func checkRatings(filepath string, team string) ([]string, error) {
 	ratings, err := csvmanager.ReadCsv(filepath, 0755, true)
 	if err != nil {
 		return nil, fmt.Errorf("%s not found", filepath)
@@ -242,7 +242,7 @@ func CheckRatings(filepath string, team string) ([]string, error) {
 //
 // Error should be checked first before trying to use team struct
 func Search(filepath string, teamName string) (Team, error) {
-	teamInfo, err := CheckRatings(filepath, teamName)
+	teamInfo, err := checkRatings(filepath, teamName)
 	if err != nil {
 		return Team{}, err
 	}
