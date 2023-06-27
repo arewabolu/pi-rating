@@ -289,6 +289,9 @@ func (t Team) ProvisionalRating(venue string) Team {
 		} else if t.ContinuousPerformanceHome < -1 {
 			t.HomeRating = t.provisionalRatingHomeV2()
 		}
+	default:
+		return t
 	}
+
 	return t
 }
