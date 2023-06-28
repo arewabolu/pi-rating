@@ -4,6 +4,7 @@ package pi
 //
 //Otherwise you should use a file to manage the ratings provided by the makefile, Search and WritePi functions
 
+// create default team structure
 func Newteam(teamname string) Team {
 	return Team{Name: teamname}
 }
