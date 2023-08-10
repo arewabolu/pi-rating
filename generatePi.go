@@ -88,29 +88,18 @@ func BuildPiforAwayteam(awayteam Team, hometeamName string, homeGoalScored, away
 // against the given team.
 func BuildPiforHometeamV2(hometeam Team, awayteam *Team, homeGoalScored, awayGoalScored int) Team {
 	HxG := ExpectedGoalIndividual(hometeam.HomeRating)
-	//	Awayteam := Newteam(awayteam)
 	AxG := ExpectedGoalIndividual(awayteam.AwayRating)
 	xGD := ExpectedGoalDifference(HxG, AxG)
 	GD := goalDifference(homeGoalScored, awayGoalScored)
 
-	var HomeErrFunc float64
 	errFunc := errorGDFunc(errorGD(GD, xGD))
-	if xGD > float64(GD) {
-		HomeErrFunc = -errFunc
-	} else {
-		HomeErrFunc = errFunc
-
+	if float64(GD) > xGD {
+		hometeam.updateBackgroundHometeamRatings(errFunc)
+		awayteam.updateBackgroundAwayteamRatings((-1 * errFunc))
+	} else if float64(GD) < xGD {
+		hometeam.updateBackgroundHometeamRatings((-1 * errFunc))
+		awayteam.updateBackgroundAwayteamRatings(errFunc)
 	}
-	hometeam.updateBackgroundHometeamRatings(HomeErrFunc)
-
-	var awayErrFunc float64
-	errFunc2 := errorGDFunc(errorGD(GD, xGD))
-	if xGD > float64(GD) {
-		awayErrFunc = errFunc2
-	} else {
-		awayErrFunc = -errFunc2
-	}
-	awayteam.updateBackgroundAwayteamRatings(awayErrFunc)
 
 	switch {
 	case xGD >= 0 && GD > 0:
@@ -142,22 +131,14 @@ func BuildPiforAwayteamv2(awayteam Team, hometeam *Team, homeGoalScored, awayGoa
 	xGD := ExpectedGoalDifference(HxG, AxG)
 	GD := goalDifference(homeGoalScored, awayGoalScored)
 
-	var AwayErrFunc float64
 	errFunc := errorGDFunc(errorGD(GD, xGD))
-	if xGD > float64(GD) {
-		AwayErrFunc = errFunc
+	if float64(GD) > xGD {
+		awayteam.updateBackgroundAwayteamRatings((-1 * errFunc))
+		hometeam.updateBackgroundHometeamRatings(errFunc)
 	} else {
-		AwayErrFunc = -errFunc
+		awayteam.updateBackgroundAwayteamRatings(errFunc)
+		hometeam.updateBackgroundHometeamRatings((-1 * errFunc))
 	}
-	awayteam.updateBackgroundAwayteamRatings(AwayErrFunc)
-
-	var HomeErrFunc float64
-	if xGD > float64(GD) {
-		HomeErrFunc = -errFunc
-	} else {
-		HomeErrFunc = errFunc
-	}
-	hometeam.updateBackgroundHometeamRatings(HomeErrFunc)
 
 	switch {
 	case xGD >= 0 && GD > 0:
