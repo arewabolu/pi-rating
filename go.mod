@@ -2,7 +2,7 @@ module github.com/arewabolu/pi-rating
 
 go 1.20
 
-require github.com/arewabolu/csvmanager v1.5.1
+require github.com/arewabolu/csvmanager v1.1.0
 
 require (
 	github.com/arewabolu/GoHaskell v0.0.5 // indirect

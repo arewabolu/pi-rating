@@ -41,7 +41,7 @@ func Addteam(filepath, teamName string) error {
 }
 
 func checkRatings(filepath string, teamName string) ([]string, error) {
-	ratings, err := csvmanager.ReadCsv(filepath, 0755, true)
+	ratings, err := csvmanager.ReadCsv(filepath, true)
 	if err != nil {
 		return nil, fmt.Errorf("%s not found", filepath)
 	}

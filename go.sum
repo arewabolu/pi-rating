@@ -1,13 +1,6 @@
-<<<<<<< Updated upstream
 github.com/arewabolu/GoHaskell v0.0.5 h1:6Out2nsMex3X7Y8hcV8iN90hOL5tCktzKLX2hMNUu1M=
 github.com/arewabolu/GoHaskell v0.0.5/go.mod h1:khrj7nU7ytM2hOg/YsKlTw0ISyiiVuIViFMcTcAHrug=
-github.com/arewabolu/csvmanager v1.4.14 h1:4Y/b03tq5FLrHZgxRkoCj/+VEJnYtGFSM4JhgO3r7PY=
-github.com/arewabolu/csvmanager v1.4.14/go.mod h1:/JY378TNOWjSUkfV8Ga7RkUA8TMDnM03EuhOaZacVP4=
-github.com/arewabolu/csvmanager v1.4.16 h1:CX4WWq6deDP8kjYAyOTBgvRPug8ybjTgpNuvhLPFxX0=
-github.com/arewabolu/csvmanager v1.4.16/go.mod h1:/JY378TNOWjSUkfV8Ga7RkUA8TMDnM03EuhOaZacVP4=
-github.com/arewabolu/csvmanager v1.5.1 h1:YhM7IRXFxAaeXWLDM/VSRZ2SWlVxvDG59GdJb9CeIv8=
-github.com/arewabolu/csvmanager v1.5.1/go.mod h1:/JY378TNOWjSUkfV8Ga7RkUA8TMDnM03EuhOaZacVP4=
-golang.org/x/exp v0.0.0-20230519143937-03e91628a987 h1:3xJIFvzUFbu4ls0BTBYcgbCGhA63eAOEMxIHugyXJqA=
-golang.org/x/exp v0.0.0-20230519143937-03e91628a987/go.mod h1:V1LtkGg67GoY2N1AnLN78QLrzxkLyJw7RJb1gzOOz9w=
+github.com/arewabolu/csvmanager v1.1.0 h1:+hyTrHOtqPeiF40G6ldvbCTLJn65D+Y52Qqc338Ebck=
+github.com/arewabolu/csvmanager v1.1.0/go.mod h1:/JY378TNOWjSUkfV8Ga7RkUA8TMDnM03EuhOaZacVP4=
 golang.org/x/exp v0.0.0-20230626212559-97b1e661b5df h1:UA2aFVmmsIlefxMk29Dp2juaUSth8Pyn3Tq5Y5mJGME=
 golang.org/x/exp v0.0.0-20230626212559-97b1e661b5df/go.mod h1:FXUEEKJgO7OQYeo8N01OfiKP8RXMtf6e8aTskBGqWdc=
