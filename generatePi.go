@@ -164,6 +164,7 @@ func UpdateTeamsAfterMatch(home *Team, away *Team, homeGoals, awayGoals int) {
 	xGD := ExpectedGoalDifference(HxG, AxG)
 	GD := goalDifference(homeGoals, awayGoals)
 
+	// correct the errors based on goal difference vs expected
 	err := errorGDFunc(errorGD(GD, xGD))
 
 	if float64(GD) > xGD {
