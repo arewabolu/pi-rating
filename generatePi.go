@@ -157,3 +157,52 @@ func BuildPiforAwayteamv2(awayteam Team, hometeam *Team, homeGoalScored, awayGoa
 
 	return awayteam
 }
+
+func UpdateTeamsAfterMatch(home *Team, away *Team, homeGoals, awayGoals int) {
+	HxG := ExpectedGoalIndividual(home.HomeRating)
+	AxG := ExpectedGoalIndividual(away.AwayRating)
+	xGD := ExpectedGoalDifference(HxG, AxG)
+	GD := goalDifference(homeGoals, awayGoals)
+
+	err := errorGDFunc(errorGD(GD, xGD))
+
+	if float64(GD) > xGD {
+		home.updateBackgroundHometeamRatings(err)
+		away.updateBackgroundAwayteamRatings(-err)
+	} else if float64(GD) < xGD {
+		home.updateBackgroundHometeamRatings(-err)
+		away.updateBackgroundAwayteamRatings(err)
+	}
+
+	// Update continuous performance for home team
+	switch {
+	case xGD >= 0 && GD > 0:
+		home.updateContinuousPerformanceHome()
+	case xGD > 0 && GD < 0:
+		home.resetContinuousPerformanceHome()
+		home.updateContinuousPerformanceHomeV2()
+	case xGD < 0 && GD > 0:
+		home.resetContinuousPerformanceHome()
+		home.updateContinuousPerformanceHome()
+	case xGD <= 0 && GD < 0:
+		home.updateContinuousPerformanceHomeV2()
+	case (xGD > 0 || xGD < 0) && GD == 0:
+		home.resetContinuousPerformanceHome()
+	}
+
+	// Update continuous performance for away team
+	switch {
+	case xGD >= 0 && GD < 0:
+		away.updateContinuousPerformanceAway()
+	case xGD > 0 && GD > 0:
+		away.resetContinuousPerformanceAway()
+		away.updateContinuousPerformanceAwayV2()
+	case xGD < 0 && GD < 0:
+		away.resetContinuousPerformanceAway()
+		away.updateContinuousPerformanceAway()
+	case xGD <= 0 && GD > 0:
+		away.updateContinuousPerformanceAwayV2()
+	case (xGD > 0 || xGD < 0) && GD == 0:
+		away.resetContinuousPerformanceAway()
+	}
+}
