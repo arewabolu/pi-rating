@@ -63,7 +63,9 @@ func (t Team) provisionalRatingAwayV2() float64 {
 	f := float64(sub)
 	denum := math.Pow(f, delta)
 	total := f / denum
-	return t.AwayRating + (Mu * total)
+	// A positive away count is a run of poor away results (see
+	// updateContinuousPerformanceAwayV2), so it lowers the rating.
+	return t.AwayRating - (Mu * total)
 }
 
 func (t Team) provisionalRatingHomeV2() float64 {
@@ -71,7 +73,9 @@ func (t Team) provisionalRatingHomeV2() float64 {
 	f := float64(sub)
 	denum := math.Pow(math.Abs(f), delta)
 	total := f / denum
-	return t.HomeRating + (-Mu * total)
+	// A negative home count is a run of poor home results, and total is
+	// already negative here, so adding it lowers the rating.
+	return t.HomeRating + (Mu * total)
 }
 
 // Should be used to incorporate form into the team ratings
